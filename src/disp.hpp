@@ -210,7 +210,10 @@ public:
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		m_window = glfwCreateWindow(1600, 900, "sbuild", nullptr, nullptr);
+		auto mon = glfwGetPrimaryMonitor();
+		int monw, monh;
+		glfwGetMonitorWorkarea(mon, nullptr, nullptr, &monw, &monh);
+		m_window = glfwCreateWindow(monw, monh, "sbuild", mon, nullptr);
 
 		{
 			VkApplicationInfo ai{ .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };

@@ -18,8 +18,10 @@ public:
 
 	void render(void)
 	{
-		for (uint32_t i = 0; i < m_w; i++)
+		for (uint32_t i = 0; i < m_w; i++) {
+			auto col = m_fb + i * m_h;
 			for (uint32_t j = 0; j < m_h; j++)
-				m_fb[i * m_h + j] = 0x000000FF;
+				col[j] = 0x000000FF;
+		}
 	}
 };

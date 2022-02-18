@@ -1,5 +1,5 @@
 CXXFLAGS_EXTRA =
-CXXFLAGS = -std=c++20 -Wall -Wextra $(CXXFLAGS_EXTRA) -I src -I for -I dep
+CXXFLAGS = -std=c++20 -Wall -Wextra -O3 $(CXXFLAGS_EXTRA) -I src -I for -I dep
 
 %.vert.spv: %.vert
 	glslangValidator $< -V -o $@
