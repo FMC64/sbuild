@@ -5,8 +5,8 @@
 namespace stb {
 
 struct Img {
-	uint32_t size;
-	uint32_t size_mask;
+	static constexpr uint32_t size = 128;
+	static constexpr uint32_t size_mask = 0x7F;
 	uint32_t *data;
 
 	Img(const char *path, bool is_alpha);

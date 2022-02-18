@@ -5,6 +5,7 @@
 #include <portaudio.h>
 #include <cstdio>
 #include <cstring>
+#include <chrono>
 #include "fr.hpp"
 #include "renderer.hpp"
 
@@ -687,6 +688,9 @@ public:
 
 		auto acquireNextImage = getDeviceProcAddr(vkAcquireNextImageKHR);
 		size_t frame_ndx = 0;
+		ivec2 camp(0, 0);
+		int32_t camele = 0;
+		auto bef = std::chrono::high_resolution_clock::now();
 		while (true) {
 			glfwPollEvents();
 			if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -704,8 +708,21 @@ public:
 				vkResetFences(m_device, 1, &frame.img_rendered_fence);
 			}
 
+			auto now = std::chrono::high_resolution_clock::now();
+			auto delta = static_cast<std::chrono::duration<double>>(now - bef).count();
+			bef = now;
+			int32_t cam_delta = delta * 1000.0;
+			if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
+				camp.y += cam_delta;
+			if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
+				camp.y -= cam_delta;
+			if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
+				camp.x -= cam_delta;
+			if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
+				camp.x += cam_delta;
+
 			{
-				renderer.render();
+				renderer.render(camp, camele);
 				std::memcpy(frame.samples_stg_ptr, fb, fb_size);
 				m_allocator.flushAllocation(frame.samples_stg.allocation, 0, fb_size);	// flush device cache to make visible samples
 			}

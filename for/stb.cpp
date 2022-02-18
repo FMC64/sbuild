@@ -8,13 +8,13 @@
 
 namespace stb {
 
-static uint32_t log2(uint32_t s)
+/*static uint32_t log2(uint32_t s)
 {
 	for (size_t i = 0; i < 32; i++)
 		if (1 << i == s)
 			return i;
 	return 0;
-}
+}*/
 
 static uint8_t srgb_to_lin(uint8_t val)
 {
@@ -39,7 +39,11 @@ Img::Img(const char *path, bool is_alpha)
 		std::printf("ERR: not squared (w=%d, h=%d)\n", x, y);
 		throw std::runtime_error(path);
 	}
-	size = x;
+	if (x != size) {
+		std::printf("ERR: size mismatch (exp=%u, got=%d)\n", size, x);
+		throw std::runtime_error(path);
+	}
+	/*size = x;
 	auto p2 = log2(size);
 	if (1 << p2 != size) {
 		std::printf("ERR: size not pow2 (w=%d, h=%d)\n", x, y);
@@ -47,7 +51,7 @@ Img::Img(const char *path, bool is_alpha)
 	}
 	size_mask = 0;
 	for (size_t i = 0; i < p2; i++)
-		size_mask |= 1 << i;
+		size_mask |= 1 << i;*/
 
 	size_t c = chan;
 	data = new uint32_t[size * size] {};
