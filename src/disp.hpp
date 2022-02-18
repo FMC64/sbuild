@@ -52,13 +52,6 @@ class Disp
 		bool ever_submitted = false;
 	};
 
-	struct Samples {
-		static inline constexpr size_t size = 96000;
-		float w, h;
-		float x, y;
-		float sps[size];
-	};
-
 	static inline constexpr uint32_t frame_max = 16;
 	Frame m_frames[frame_max];
 	uint32_t m_frame_count;
@@ -208,22 +201,24 @@ class Disp
 		m_allocator.destroy(stag);
 	}
 
+	size_t fb_size;;
+
 public:
 	Disp(void)
 	{
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		m_window = glfwCreateWindow(1600, 900, "Imtempores", nullptr, nullptr);
+		m_window = glfwCreateWindow(1600, 900, "sbuild", nullptr, nullptr);
 
 		{
 			VkApplicationInfo ai{ .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };
 			ai.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-			ai.pApplicationName = "Imtempores";
+			ai.pApplicationName = "sbuild";
 			ai.applicationVersion = VK_MAKE_VERSION(0, 0, 0);
-			ai.pEngineName = "Imtemporesgine";
+			ai.pEngineName = "sbuild";
 			ai.engineVersion = VK_MAKE_VERSION(0, 0, 0);
-			ai.apiVersion = VK_MAKE_VERSION(1, 0, 0);
+			ai.apiVersion = VK_MAKE_VERSION(1, 2, 0);
 			VkInstanceCreateInfo ci{ .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 			ci.pApplicationInfo = &ai;
 			const char *layers[16];
@@ -307,6 +302,7 @@ public:
 				std::printf("present mode: %d\n", m_present_mode);
 			}
 		}
+		fb_size = sizeof(uint32_t) + m_surface_capabilities.currentExtent.width * m_surface_capabilities.currentExtent.height * 3;
 		{
 			VkDeviceCreateInfo ci{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 			VkDeviceQueueCreateInfo qci { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
@@ -321,6 +317,9 @@ public:
 			};
 			ci.enabledExtensionCount = array_size(exts);
 			ci.ppEnabledExtensionNames = exts;
+			VkPhysicalDeviceVulkan12Features features { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+			features.uniformAndStorageBuffer8BitAccess = VK_TRUE;
+			ci.pNext = &features;
 			vkAssert(vkCreateDevice(m_physical_device, &ci, nullptr, &m_device));
 		}
 		vkGetDeviceQueue(m_device, m_queue_family, 0, &m_queue);
@@ -562,7 +561,7 @@ public:
 			VkDescriptorBufferInfo bis[m_frame_count];
 			for (size_t i = 0; i < m_frame_count; i++) {
 				VkBufferCreateInfo ci{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-				ci.size = sizeof(Samples);
+				ci.size = fb_size;
 				ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 				fr::AllocCreateInfo ai{};
 				ai.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -570,7 +569,7 @@ public:
 				m_frames[i].samples = buf;
 				{
 					VkBufferCreateInfo ci{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-					ci.size = sizeof(Samples);
+					ci.size = fb_size;
 					ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 					fr::AllocCreateInfo ai{};
 					ai.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
@@ -675,10 +674,11 @@ public:
 
 	void run(void)
 	{
-		float w = m_surface_capabilities.currentExtent.width;
-		float h = m_surface_capabilities.currentExtent.height;
-		auto size = max(w, h);
-		uint8_t *fb = new uint8_t[w * h];
+		uint32_t w = m_surface_capabilities.currentExtent.width;
+		uint32_t h = m_surface_capabilities.currentExtent.height;
+		uint8_t *fb = new uint8_t[sizeof(uint32_t) * w * h];
+		*reinterpret_cast<uint32_t*>(fb) = h;
+		auto fb_data = fb + sizeof(uint32_t);
 
 		auto acquireNextImage = getDeviceProcAddr(vkAcquireNextImageKHR);
 		size_t frame_ndx = 0;
@@ -700,37 +700,14 @@ public:
 			}
 
 			{
-				/*float buf[audio_buf_size];
-				auto avail_i = Pa_GetStreamWriteAvailable(audio_out);
-				size_t avail = static_cast<size_t>(avail_i);
-				bool done = false;
-				while (true) {
-					if (avail_i <= 0)
-						break;
-					if (avail == 0)
-						break;
-					auto got = audio.next(min(avail * audio_channels, audio_buf_size), buf);
-					size_t got_frames;
-					if (done) {
-						got_frames = min(avail, audio_frame_size);
-					} else {
-						got_frames = got / audio_channels;
-						if (got == 0) {
-							got_frames = min(avail, audio_frame_size);
-							done = true;
-							for (size_t i = 0; i < audio_buf_size; i++)
-								buf[i] = 0.0f;
-						}
+				for (size_t i = 0; i < w; i++)
+					for (size_t j = 0; j < h; j++) {
+						fb_data[(i * h + j) * 3 + 0] = 0xFF;
+						fb_data[(i * h + j) * 3 + 1] = 0xFF;
+						fb_data[(i * h + j) * 3 + 2] = 0;
 					}
-					Pa_WriteStream(audio_out, buf, got_frames);
-					for (size_t i = 0; i < (samples.size - got_frames); i++)
-						samples.sps[samples.size - 1 - i] = samples.sps[samples.size - 1 - i - got_frames];
-					for (size_t i = 0; i < got_frames; i++)
-						samples.sps[got_frames - 1 - i] = buf[i * audio_channels];
-					avail -= got_frames;
-				}
-				std::memcpy(frame.samples_stg_ptr, &samples, sizeof(Samples));*/
-				m_allocator.flushAllocation(frame.samples_stg.allocation, 0, sizeof(Samples));	// flush device cache to make visible samples
+				std::memcpy(frame.samples_stg_ptr, fb, fb_size);
+				m_allocator.flushAllocation(frame.samples_stg.allocation, 0, fb_size);	// flush device cache to make visible samples
 			}
 			{
 				{
@@ -740,7 +717,7 @@ public:
 					VkBufferCopy region {
 						.srcOffset = 0,
 						.dstOffset = 0,
-						.size = sizeof(Samples)
+						.size = fb_size
 					};
 					vkCmdCopyBuffer(frame.cmd_trans, frame.samples_stg.buffer, frame.samples.buffer, 1, &region);
 					vkAssert(vkEndCommandBuffer(frame.cmd_trans));
