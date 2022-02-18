@@ -115,14 +115,18 @@ public:
 		walls.emplace_back(Wall{
 			ivec2(-500, 500),
 			ivec2(2000, 3000),
-			-800,
-			200
+			/*-800,
+			200*/
+			-500,
+			500
 		});
 		walls.emplace_back(Wall{
 			ivec2(-2000, 3000),
 			ivec2(500, 500) + ivec2(-1200, 0),
-			-800,
-			200
+			/*-800,
+			200*/
+			-500,
+			500
 		});
 	}
 
@@ -169,16 +173,28 @@ public:
 			int32_t tb = proj_y(w.b, w.ele_low);
 			int32_t bb = proj_y(w.b, w.ele_up);
 
+			int32_t hh = w.h / 2;
+
 			for (int32_t i = l; i < r; i++) {
 				auto col = m_fb + i * m_h;
 				auto x = i - l;
-				int32_t t = max(lerp(ta, tb, rl, x), 0);
-				int32_t b = min(lerp(ba, bb, rl, x), m_hm);
+				int32_t t = lerp(ta, tb, rl, x);
+				int32_t tu = 0;
+				if (t < 0) {
+					tu = lerp(hh, tu, m_hh - t, m_hh);
+					t = 0;
+				}
+				int32_t b = lerp(ba, bb, rl, x);
+				int32_t bu = w.h;
+				if (b > m_hm) {
+					bu = lerp(hh, bu, b - m_hh, m_hh);
+					b = m_hm;
+				}
 				int32_t bt = b - t;
 				for (int32_t j = t; j < b; j++)
 					col[j] = t0.sample(
 						lerp_persp(0, w.w, w.a.y, w.b.y, rl, x),
-						lerp(0, w.h, bt, j - t)
+						lerp(tu, bu, bt, j - t)
 					);
 			}
 		}
