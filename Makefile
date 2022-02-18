@@ -21,6 +21,7 @@ FOR_OBJ = $(FOR:.cpp=.o)
 all: $(TARGET)
 
 for/vma.o: CXXFLAGS_EXTRA = -Wno-nullability-completeness -Wno-missing-field-initializers -Wno-unused-variable -Wno-unused-parameter
+src/main.o: $(wildcard src/*.hpp)
 
 $(TARGET): $(SHAS) $(OBJ) $(FOR_OBJ)
 	$(CXX) $(CXXFLAGS) $(OBJ) $(FOR_OBJ) -o $(TARGET) -L$(VULKAN_SDK)/Lib/ -lvulkan-1 -lglfw3

@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include "fr.hpp"
+#include "renderer.hpp"
 
 class Disp
 {
@@ -201,7 +202,7 @@ class Disp
 		m_allocator.destroy(stag);
 	}
 
-	size_t fb_size;;
+	size_t fb_size;
 
 public:
 	Disp(void)
@@ -302,7 +303,7 @@ public:
 				std::printf("present mode: %d\n", m_present_mode);
 			}
 		}
-		fb_size = sizeof(uint32_t) + m_surface_capabilities.currentExtent.width * m_surface_capabilities.currentExtent.height * 3;
+		fb_size = sizeof(uint32_t) + m_surface_capabilities.currentExtent.width * m_surface_capabilities.currentExtent.height * sizeof(uint32_t);
 		{
 			VkDeviceCreateInfo ci{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 			VkDeviceQueueCreateInfo qci { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
@@ -679,6 +680,7 @@ public:
 		uint8_t *fb = new uint8_t[sizeof(uint32_t) * w * h];
 		*reinterpret_cast<uint32_t*>(fb) = h;
 		auto fb_data = fb + sizeof(uint32_t);
+		Renderer renderer(reinterpret_cast<uint32_t*>(fb_data), w, h);
 
 		auto acquireNextImage = getDeviceProcAddr(vkAcquireNextImageKHR);
 		size_t frame_ndx = 0;
@@ -700,12 +702,7 @@ public:
 			}
 
 			{
-				for (size_t i = 0; i < w; i++)
-					for (size_t j = 0; j < h; j++) {
-						fb_data[(i * h + j) * 3 + 0] = 0xFF;
-						fb_data[(i * h + j) * 3 + 1] = 0xFF;
-						fb_data[(i * h + j) * 3 + 2] = 0;
-					}
+				renderer.render();
 				std::memcpy(frame.samples_stg_ptr, fb, fb_size);
 				m_allocator.flushAllocation(frame.samples_stg.allocation, 0, fb_size);	// flush device cache to make visible samples
 			}
