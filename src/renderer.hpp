@@ -138,23 +138,12 @@ public:
 
 	int32_t lerp(int32_t a, int32_t b, int32_t scale, int32_t x)
 	{
-		return a * (scale - x) / scale + b * x / scale;
-	}
-
-	double lerpf(double a, double b, double scale, double x)
-	{
-		return a * (scale - x) / scale + b * x / scale;
-	}
-
-	double lerpf_persp(double a, double b, double za, double zb, double scale, double x)
-	{
-		return ((scale - x) * (a / za) + x * (b / zb)) /
-			((scale - x) / za + x / zb);
+		return ((scale - x) * a + x * b) / scale;
 	}
 
 	int32_t lerp_persp(int32_t a, int32_t b, int32_t za, int32_t zb, int32_t scale, int32_t x)
 	{
-		return lerpf_persp(a, b, za, zb, scale, x);
+		return ((scale - x) * a * zb + x * b * za) / ((scale - x) * zb + x * za);
 	}
 
 	void render(ivec2 camp, int32_t camele)
@@ -185,8 +174,12 @@ public:
 				auto x = i - l;
 				int32_t t = max(lerp(ta, tb, rl, x), 0);
 				int32_t b = min(lerp(ba, bb, rl, x), m_hm);
+				int32_t bt = b - t;
 				for (int32_t j = t; j < b; j++)
-					col[j] = t0.sample(lerp_persp(0, w.w, w.a.y, w.b.y, rl, x), lerp(0, w.h, b - t, j - t));
+					col[j] = t0.sample(
+						lerp_persp(0, w.w, w.a.y, w.b.y, rl, x),
+						lerp(0, w.h, bt, j - t)
+					);
 			}
 		}
 	}
