@@ -15,7 +15,7 @@ SHA_VERT = $(SHA:.vert=.vert.spv)
 SHA_FRAG = $(SHA:.frag=.frag.spv)
 SHAS = $(filter-out $(SHA), $(SHA_VERT) $(SHA_FRAG))
 
-FOR = for/fr.cpp for/vma.cpp
+FOR = for/fr.cpp for/vma.cpp for/stb.cpp
 FOR_OBJ = $(FOR:.cpp=.o)
 
 all: $(TARGET)
