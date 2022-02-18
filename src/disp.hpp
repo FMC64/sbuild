@@ -720,6 +720,10 @@ public:
 				camp.x -= cam_delta;
 			if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
 				camp.x += cam_delta;
+			if (glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS)
+				camele -= cam_delta;
+			if (glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+				camele += cam_delta;
 
 			{
 				renderer.render(camp, camele);

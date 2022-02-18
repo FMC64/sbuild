@@ -91,6 +91,12 @@ public:
 			-800,
 			200
 		});
+		walls.emplace_back(Wall{
+			ivec2(-2000, 3000),
+			ivec2(500, 500) + ivec2(-1200, 0),
+			-800,
+			200
+		});
 	}
 
 	int32_t proj_x(const ivec2 &p)
@@ -100,7 +106,12 @@ public:
 
 	int32_t proj_y(const ivec2 &p, int32_t ele)
 	{
-		return (ele * m_hh) / p.y + m_wh;;
+		return (ele * m_hh) / p.y + m_hh;
+	}
+
+	int32_t lerp_x(int32_t a, int32_t b, int32_t scale, int32_t x)
+	{
+		return a * (scale - 1 - x) / scale + b * x / scale;
 	}
 
 	void render(ivec2 camp, int32_t camele)
@@ -112,14 +123,25 @@ public:
 			w.ele_low -= camele;
 			w.ele_up -= camele;
 
-			int32_t l = max(proj_x(w.a), 0);
-			int32_t r = min(proj_x(w.b), m_wm);
-			if (l > m_wm || r < 0 || l > r)
+			if (w.a.y <= 0 || w.b.y <= 0)
 				continue;
 
-			for (uint32_t i = l; i < r; i++) {
+			int32_t l = max(proj_x(w.a), 0);
+			int32_t r = min(proj_x(w.b), m_wm);
+			if (l > m_wm || r < 0 || l >= r)
+				continue;
+			int32_t rl = r - l;
+
+			int32_t ta = proj_y(w.a, w.ele_low);
+			int32_t ba = proj_y(w.a, w.ele_up);
+			int32_t tb = proj_y(w.b, w.ele_low);
+			int32_t bb = proj_y(w.b, w.ele_up);
+
+			for (int32_t i = l; i < r; i++) {
 				auto col = m_fb + i * m_h;
-				for (uint32_t j = 0; j < m_h; j++)
+				int32_t t = max(lerp_x(ta, tb, rl, i - l), 0);
+				int32_t b = min(lerp_x(ba, bb, rl, i - l), m_hm);
+				for (int32_t j = t; j < b; j++)
 					col[j] = t0.sample(i, j);
 			}
 		}
