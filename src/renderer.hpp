@@ -3,6 +3,12 @@
 #include "stb.hpp"
 #include <cstdint>
 #include <vector>
+#include <cmath>
+
+static inline constexpr int32_t tex_scale(int32_t s)
+{
+	return s * stb::Img::size / 1000;
+}
 
 struct ivec2 {
 	int32_t x;
@@ -16,14 +22,19 @@ struct ivec2 {
 	{
 	}
 
-	inline auto operator-(const own &other)
+	inline auto operator-(const own &other) const
 	{
 		return own(x - other.x, y - other.y);
 	}
 
-	inline auto operator+(const own &other)
+	inline auto operator+(const own &other) const
 	{
 		return own(x + other.x, y + other.y);
+	}
+
+	inline auto operator*(int32_t s) const
+	{
+		return own(x * s, y * s);
 	}
 
 	inline void operator-=(const own &other)
@@ -34,6 +45,16 @@ struct ivec2 {
 	inline void operator+=(const own &other)
 	{
 		*this = *this + other;
+	}
+
+	int32_t dot(const own &other) const
+	{
+		return x * other.x + y * other.y;
+	}
+
+	int32_t norm_tex(void) const
+	{
+		return std::sqrt(tex_scale(dot(*this)));
 	}
 };
 
@@ -52,6 +73,18 @@ struct Wall {
 	ivec2 b;
 	int32_t ele_low;
 	int32_t ele_up;
+	int32_t w;
+	int32_t h;
+	
+	Wall(ivec2 a, ivec2 b, int32_t ele_low, int32_t ele_up) :
+		a(a),
+		b(b),
+		ele_low(ele_low),
+		ele_up(ele_up),
+		w((b - a).norm_tex()),
+		h(tex_scale((ele_up - ele_low)))
+	{
+	}
 };
 
 class Renderer
@@ -108,6 +141,21 @@ public:
 		return a * (scale - x) / scale + b * x / scale;
 	}
 
+	double lerpf(double a, double b, double scale, double x)
+	{
+		return a * (scale - x) / scale + b * x / scale;
+	}
+
+	double lerpf_persp(double a, double b, double za, double zb, double x)
+	{
+		return ((1.0 - x) * (a / za) + x * (b / zb)) / ((1.0 - x) / za + x / zb);
+	}
+
+	int32_t lerp_persp(int32_t a, int32_t b, int32_t za, int32_t zb, int32_t scale, int32_t x)
+	{
+		return lerpf_persp(a, b, za, zb, static_cast<double>(x) / static_cast<double>(scale));
+	}
+
 	void render(ivec2 camp, int32_t camele)
 	{
 		std::memset(m_fb, 0, m_w * m_h * sizeof(uint32_t));
@@ -133,10 +181,11 @@ public:
 
 			for (int32_t i = l; i < r; i++) {
 				auto col = m_fb + i * m_h;
-				int32_t t = max(lerp(ta, tb, rl, i - l), 0);
-				int32_t b = min(lerp(ba, bb, rl, i - l), m_hm);
+				auto x = i - l;
+				int32_t t = max(lerp(ta, tb, rl, x), 0);
+				int32_t b = min(lerp(ba, bb, rl, x), m_hm);
 				for (int32_t j = t; j < b; j++)
-					col[j] = t0.sample(i, j);
+					col[j] = t0.sample(lerp_persp(0, w.w, w.a.y, w.b.y, rl, x), lerp(0, w.h, b - t, j - t));
 			}
 		}
 	}
