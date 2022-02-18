@@ -146,14 +146,15 @@ public:
 		return a * (scale - x) / scale + b * x / scale;
 	}
 
-	double lerpf_persp(double a, double b, double za, double zb, double x)
+	double lerpf_persp(double a, double b, double za, double zb, double scale, double x)
 	{
-		return ((1.0 - x) * (a / za) + x * (b / zb)) / ((1.0 - x) / za + x / zb);
+		return ((scale - x) * (a / za) + x * (b / zb)) /
+			((scale - x) / za + x / zb);
 	}
 
 	int32_t lerp_persp(int32_t a, int32_t b, int32_t za, int32_t zb, int32_t scale, int32_t x)
 	{
-		return lerpf_persp(a, b, za, zb, static_cast<double>(x) / static_cast<double>(scale));
+		return lerpf_persp(a, b, za, zb, scale, x);
 	}
 
 	void render(ivec2 camp, int32_t camele)
