@@ -26,12 +26,6 @@ struct ivec2 {
 		return own(x + other.x, y + other.y);
 	}
 
-	inline void operator=(const own &other)
-	{
-		x = other.x;
-		y = other.y;
-	}
-
 	inline void operator-=(const own &other)
 	{
 		*this = *this - other;
@@ -109,9 +103,9 @@ public:
 		return (ele * m_hh) / p.y + m_hh;
 	}
 
-	int32_t lerp_x(int32_t a, int32_t b, int32_t scale, int32_t x)
+	int32_t lerp(int32_t a, int32_t b, int32_t scale, int32_t x)
 	{
-		return a * (scale - 1 - x) / scale + b * x / scale;
+		return a * (scale - x) / scale + b * x / scale;
 	}
 
 	void render(ivec2 camp, int32_t camele)
@@ -139,8 +133,8 @@ public:
 
 			for (int32_t i = l; i < r; i++) {
 				auto col = m_fb + i * m_h;
-				int32_t t = max(lerp_x(ta, tb, rl, i - l), 0);
-				int32_t b = min(lerp_x(ba, bb, rl, i - l), m_hm);
+				int32_t t = max(lerp(ta, tb, rl, i - l), 0);
+				int32_t b = min(lerp(ba, bb, rl, i - l), m_hm);
 				for (int32_t j = t; j < b; j++)
 					col[j] = t0.sample(i, j);
 			}
