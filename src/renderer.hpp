@@ -173,7 +173,7 @@ public:
 			int32_t tb = proj_y(w.b, w.ele_low);
 			int32_t bb = proj_y(w.b, w.ele_up);
 
-			int32_t hh = w.h / 2;
+			int32_t hh = lerp(0, w.h, w.ele_up - w.ele_low, -w.ele_low);
 
 			for (int32_t i = l; i < r; i++) {
 				auto col = m_fb + i * m_h;

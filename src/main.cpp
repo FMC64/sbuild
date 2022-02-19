@@ -4,7 +4,7 @@
 int main(void)
 {
 	try {
-		Disp().run();
+		Disp(false).run();
 	} catch (const fr::exception &e) {
 		std::printf("FATAL ERROR: %s\n", e.what());
 		return 1;
