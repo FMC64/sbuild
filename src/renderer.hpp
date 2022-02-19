@@ -150,6 +150,11 @@ public:
 		return ((scale - x) * a * zb + x * b * za) / ((scale - x) * zb + x * za);
 	}
 
+	int32_t lerp_z(int32_t za, int32_t zb, int32_t scale, int32_t x)
+	{
+		return scale * za * zb / ((scale - x) * zb + x * za);
+	}
+
 	void render(ivec2 camp, int32_t camele)
 	{
 		std::memset(m_fb, 0, m_w * m_h * sizeof(uint32_t));
@@ -162,16 +167,30 @@ public:
 			if (w.a.y <= 0 || w.b.y <= 0)
 				continue;
 
-			int32_t l = max(proj_x(w.a), 0);
-			int32_t r = min(proj_x(w.b), m_wm);
+			int32_t l = proj_x(w.a);
+			int32_t lu = 0;
+			int32_t r = proj_x(w.b);
+			int32_t ru = w.w;
+
+			if (l < 0) {
+				lu = lerp_persp(w.w, 0, w.b.y, w.a.y, r - l, r);
+				w.a.y = lerp_z(w.b.y, w.a.y, r - l, r);
+				l = 0;
+			}
+			if (r > m_wm) {
+				ru = lerp_persp(0, w.w, w.a.y, w.b.y, r - l, m_w - l);
+				w.b.y = lerp_z(w.a.y, w.b.y, r - l, m_w - l);
+				r = m_wm;
+			}
 			if (l > m_wm || r < 0 || l >= r)
 				continue;
-			int32_t rl = r - l;
 
 			int32_t ta = proj_y(w.a, w.ele_low);
 			int32_t ba = proj_y(w.a, w.ele_up);
 			int32_t tb = proj_y(w.b, w.ele_low);
 			int32_t bb = proj_y(w.b, w.ele_up);
+
+			int32_t rl = r - l;
 
 			int32_t hh = lerp(0, w.h, w.ele_up - w.ele_low, -w.ele_low);
 
@@ -193,7 +212,7 @@ public:
 				int32_t bt = b - t;
 				for (int32_t j = t; j < b; j++)
 					col[j] = t0.sample(
-						lerp_persp(0, w.w, w.a.y, w.b.y, rl, x),
+						lerp_persp(lu, ru, w.a.y, w.b.y, rl, x),
 						lerp(tu, bu, bt, j - t)
 					);
 			}
