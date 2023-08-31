@@ -1,7 +1,7 @@
 # sbuild
 Very simple software renderer to draw perspective correct vertical walls, using fixed-point arithmetic only
 
-## Initial public release commentary (31th of August, 2023)
+## Initial public release commentary (31st of August, 2023)
 
 When writing this playground, I wanted to get back to software rendering after playing DOOM (1993) and the fantastic Blood (1997). I already had made mitigated attempts with only succeeding at affine texture mapping a few years back, so I wanted to get back into the challenge!
 
